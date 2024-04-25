@@ -1,38 +1,30 @@
 <script setup>
 import { supabase } from '../supabase'
-import { onMounted, ref, toRefs, watch } from 'vue'
+import { onMounted, ref, toRefs } from 'vue'
 import Avatar from './Avatar.vue';
-import { useRoute } from 'vue-router';
 
-const route = useRoute()
+const props = defineProps(['session'])
+const { session } = toRefs(props)
 
 const loading = ref(true)
 const username = ref('')
 const website = ref('')
 const avatar_url = ref('')
 const role = ref('')
-const session = ref()
-const userId = route.params.userId
 
 onMounted(() => {
-    supabase.auth.getSession().then(({ data }) => {
-        session.value = data.session
-    }).then(() => getProfile())
-
-    supabase.auth.onAuthStateChange((_, _session) => {
-        session.value = _session
-    })
+    getProfile()
 })
-
 
 async function getProfile() {
     try {
         loading.value = true
+        const { user } = session.value
 
         let { data, error, status } = await supabase
             .from('profiles')
             .select(`id, username, website, avatar_url`)
-            .eq('id', userId)
+            .eq('id', user.id)
             .single()
 
         if (error && status !== 406) throw error
@@ -55,7 +47,7 @@ async function updateProfile() {
         const { user } = session.value
 
         const updates = {
-            id: userId,
+            id: user.id,
             username: username.value,
             website: website.value,
             avatar_url: avatar_url.value,
@@ -86,7 +78,7 @@ async function signOut() {
 </script>
 
 <template>
-    <form v-if="session" class="form-widget" @submit.prevent="updateProfile">
+    <form class="form-widget" @submit.prevent="updateProfile">
         <Avatar v-model:path="avatar_url" @upload="updateProfile" size="10" />
         <div>
             <label for="email">Email</label>
