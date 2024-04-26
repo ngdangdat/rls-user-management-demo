@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { onMounted, ref, toRefs, watch } from 'vue'
 import Avatar from './Avatar.vue';
 import { useRoute } from 'vue-router';
+import * as utils from '../utils.js';
 
 const route = useRoute()
 
@@ -10,8 +11,11 @@ const loading = ref(true)
 const username = ref('')
 const website = ref('')
 const avatar_url = ref('')
-const role = ref('')
 const session = ref()
+const readOnlyFields = ref({
+  email: null,
+  role: null,
+})
 const userId = route.params.userId
 
 onMounted(() => {
@@ -31,7 +35,7 @@ async function getProfile() {
 
         let { data, error, status } = await supabase
             .from('profiles')
-            .select(`id, username, website, avatar_url`)
+            .select(`id, username, email, website, avatar_url, role`)
             .eq('id', userId)
             .single()
 
@@ -41,6 +45,8 @@ async function getProfile() {
             username.value = data.username
             website.value = data.website
             avatar_url.value = data.avatar_url
+            readOnlyFields.value.email = data.email
+            readOnlyFields.value.role = data.role
         }
     } catch (error) {
         alert(error.message)
@@ -52,11 +58,10 @@ async function getProfile() {
 async function updateProfile() {
     try {
         loading.value = true
-        const { user } = session.value
-
         const updates = {
             id: userId,
             username: username.value,
+            email: readOnlyFields.value.email,
             website: website.value,
             avatar_url: avatar_url.value,
             updated_at: new Date(),
@@ -90,7 +95,7 @@ async function signOut() {
         <Avatar v-model:path="avatar_url" @upload="updateProfile" size="10" />
         <div>
             <label for="email">Email</label>
-            <input id="email" type="text" :value="session.user.email" disabled />
+            <input id="email" type="text" :value="readOnlyFields.email" disabled />
         </div>
         <div>
             <label for="username">Name</label>
@@ -102,7 +107,7 @@ async function signOut() {
         </div>
         <div>
             <label for="role">Role</label>
-            <input id="role" type="text" :value="session.user.role" disabled />
+            <input id="role" type="text" :value="utils.getRoleLabel(readOnlyFields.role)" disabled />
         </div>
         <div>
             <input type="submit" class="button primary block" :value="loading ? 'Loading ...' : 'Update'"

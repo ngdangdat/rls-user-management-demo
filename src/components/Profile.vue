@@ -1,6 +1,7 @@
 <script setup>
 import { supabase } from '../supabase'
 import { onMounted, ref, toRefs } from 'vue'
+import * as utils from '../utils.js'
 import Avatar from './Avatar.vue';
 
 const props = defineProps(['session'])
@@ -10,7 +11,10 @@ const loading = ref(true)
 const username = ref('')
 const website = ref('')
 const avatar_url = ref('')
-const role = ref('')
+const readOnlyFields = ref({
+  email: null,
+  role: null
+})
 
 onMounted(() => {
     getProfile()
@@ -23,7 +27,7 @@ async function getProfile() {
 
         let { data, error, status } = await supabase
             .from('profiles')
-            .select(`id, username, website, avatar_url`)
+            .select(`id, email, username, website, avatar_url, role`)
             .eq('id', user.id)
             .single()
 
@@ -33,6 +37,8 @@ async function getProfile() {
             username.value = data.username
             website.value = data.website
             avatar_url.value = data.avatar_url
+            readOnlyFields.value.email = data.email
+            readOnlyFields.value.role = data.role
         }
     } catch (error) {
         alert(error.message)
@@ -48,6 +54,7 @@ async function updateProfile() {
 
         const updates = {
             id: user.id,
+            email: readOnlyFields.value.email,
             username: username.value,
             website: website.value,
             avatar_url: avatar_url.value,
@@ -82,7 +89,7 @@ async function signOut() {
         <Avatar v-model:path="avatar_url" @upload="updateProfile" size="10" />
         <div>
             <label for="email">Email</label>
-            <input id="email" type="text" :value="session.user.email" disabled />
+            <input id="email" type="text" :value="readOnlyFields.email" disabled />
         </div>
         <div>
             <label for="username">Name</label>
@@ -94,7 +101,7 @@ async function signOut() {
         </div>
         <div>
             <label for="role">Role</label>
-            <input id="role" type="text" :value="session.user.role" disabled />
+            <input id="role" type="text" :value="utils.getRoleLabel(readOnlyFields.role)" disabled />
         </div>
         <div>
             <input type="submit" class="button primary block" :value="loading ? 'Loading ...' : 'Update'"

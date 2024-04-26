@@ -5,7 +5,6 @@ import { supabase } from './supabase'
 const session = ref()
 
 onMounted(() => {
-  console.log("hehe")
   supabase.auth.getSession().then(({ data }) => {
     session.value = data.session
   })
@@ -20,10 +19,13 @@ onMounted(() => {
   <div class="container" style="padding: 50px 0 100px 0">
     <div class="headers">
       <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/users">User List</a></li>
+        <li><router-link to="/">Home</router-link></li>
+        <li><router-link to="/users">User List</router-link></li>
+        <li><router-link to="/profile">Profile</router-link></li>
       </ul>
     </div>
-    <router-view :key="$route.path"></router-view>
+    <router-view v-slot="{ Component }" :key="$route.path">
+      <component :is="Component" :session="session" />
+    </router-view>
   </div>
 </template>
