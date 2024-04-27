@@ -13,6 +13,18 @@ onMounted(() => {
     session.value = _session
   })
 })
+
+async function signOut() {
+    try {
+        loading.value = true
+        let { error } = await supabase.auth.signOut()
+        if (error) throw error
+    } catch (error) {
+        alert(error.message)
+    } finally {
+        loading.value = false
+    }
+}
 </script>
 
 <template>
@@ -21,7 +33,9 @@ onMounted(() => {
       <ul>
         <li><router-link to="/">Home</router-link></li>
         <li><router-link to="/users">User List</router-link></li>
-        <li><router-link to="/profile">Profile</router-link></li>
+        <li v-if="session"><router-link to="/profile">Profile</router-link></li>
+        <li v-if="session"><a @click="signOut" href="#">Signout</a></li>
+        <li v-else><router-link to="/register">Register/Login</router-link></li>
       </ul>
     </div>
     <router-view v-slot="{ Component }" :key="$route.path">
